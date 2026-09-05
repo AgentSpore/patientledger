@@ -1,13 +1,11 @@
-"""PatientLedger — thin FastAPI entrypoint (G1).
-
-Routers land in G3; the entrypoint is intentionally minimal so a smoke
-test (`GET /health`) confirms the package is importable and the app
-boots before any domain logic is wired in.
-"""
+"""PatientLedger — FastAPI entrypoint (G3: routers wired in)."""
 from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from .api.events import router as events_router
+from .core.db import init_db
 
 app = FastAPI(
     title="PatientLedger",
@@ -27,6 +25,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(events_router, prefix="/api")
+
+
+@app.on_event("startup")
+async def _startup() -> None:
+    await init_db()
 
 
 @app.get("/health")
